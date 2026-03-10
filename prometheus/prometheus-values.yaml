@@ -30,6 +30,21 @@ additionalPrometheusRulesMap:
 
             * 100
 
+  my-node-requests-alerts:
+    groups:
+      - name: node-requests-alerts
+        rules:
+        - alert: NodeMemoryRequestsHigh
+          annotations:
+            description: |
+              {{ $labels.node }} node memory requests are over 4%, currently at {{ $value }}%
+            summary: Node has high memory requests
+          expr: node:memory_requests:ratio > 4
+          for: 5m
+          labels:
+            severity: warning
+            node: |-
+              {{ $labels.node }}
 
 alertmanager:
   alertmanagerSpec:
