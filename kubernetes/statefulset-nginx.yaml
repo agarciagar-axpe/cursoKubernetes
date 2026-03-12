@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: nginx-sts
+spec:
+  selector:
+    matchLabels:
+      app: nginx-sts
+  replicas: 4
+  template:
+    metadata:
+      labels:
+        app: nginx-sts
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.28.1
+        ports:
+        - containerPort: 80
+          name: web
+        volumeMounts:
+        - name: nginx-sts
+          mountPath: /persistent
+
+  volumeClaimTemplates:
+  - metadata:
+      name: nginx-sts
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: openebs-hostpath
+      resources:
+        requests:
+          storage: 1Gi
