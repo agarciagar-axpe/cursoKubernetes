@@ -1,0 +1,17 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: inspect-workspace
+spec:
+  workspaces:
+  - name: source
+  steps:
+    - name: inspect
+      image: ubuntu
+      workingDir: /workspace/source
+      script: |
+        #!/bin/bash
+        pwd
+        df -h
+        ls
+        env

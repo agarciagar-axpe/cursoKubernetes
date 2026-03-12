@@ -1,0 +1,19 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: maven-unit-test
+spec:
+  workspaces:
+  - name: source
+  steps:
+    - name: unit-test
+      image: maven:3.9.9-eclipse-temurin-17
+      workingDir: /workspace/source
+      script: |
+        #!/bin/bash
+        mvn --version
+        java -version
+        env
+        ls
+        mvn test -Dmaven.repo.local=/workspace/source/.m2/repository
+        rm -r /workspace/source/.m2/repository
