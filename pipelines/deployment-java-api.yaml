@@ -1,0 +1,137 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: java-api-deployment
+  annotations:
+    image.openshift.io/triggers: |-
+      [
+        {
+          "from": {
+            "kind": "ImageStreamTag",
+            "name": "java-api:latest"
+          },
+          "fieldPath": "spec.template.spec.containers[?(@.name==\"axpe-java-api\")].image"
+        }
+      ]
+spec:
+
+  replicas: 2
+
+  selector:
+    matchLabels:
+      app: java-api
+
+  template:  
+    metadata:
+      labels:
+        app: java-api
+    spec:
+      initContainers:
+        - name: init-myservice
+          image: busybox:1.28
+          command: ['sh', '-c', "until nslookup java-api.$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace).svc.cluster.local; do echo waiting for myservice; sleep 2; done"]
+      containers:
+        - name: java-api
+          image: image-registry.openshift-image-registry.svc:5000/nachomillangarcia-dev/axpe-java-api:latest
+          ports:
+          - containerPort: 80    
+          resources:
+            requests:
+              memory: 150Mi
+              cpu: 100m
+            limits:
+              memory: 150Mi
+              cpu: 100m
+
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            failureThreshold: 3
+            periodSeconds: 10
+
+          startupProbe:
+            httpGet:
+              path: /
+              port: 8080
+            periodSeconds: 5
+
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            failureThreshold: 1
+            periodSeconds: 10
+
+          env:
+          - name: OTHER_VARIABLE
+            value: OTHER_VALUE
+          
+          - name: LOG_LEVEL
+            valueFrom:
+              configMapKeyRef:
+                name: java-api-config
+                key: LOG_LEVEL
+
+          - name: MY_NODE_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName
+
+          volumeMounts:
+          - name: config
+            mountPath: /config
+
+          # command:
+          # - "/bin/bash"
+
+          # args:
+          # - -c
+          # - "sleep 3600"
+
+          lifecycle:
+            stopSignal: SIGKILL
+
+            preStop:
+              exec:
+                command: ["/bin/sh", "-c", echo 'Container stopping in 10s…'; sleep 10"]
+
+      terminationGracePeriodSeconds: 60
+      volumes:
+      - name: config
+        configMap:
+          name: java-api-config
+
+---
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: java-api-config
+data:
+  foo: bar
+  my-var: value
+  other-var: other-value
+  properties-file: |
+    environment: production
+    version: v1.0.1
+    database-name: app-prod
+  message.txt: |
+   <h1> Hello from configmap </h1>
+
+  LOG_LEVEL: INFO
+  
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: java-api
+spec:
+  type: ClusterIP
+  selector:
+    app: java-api
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080
