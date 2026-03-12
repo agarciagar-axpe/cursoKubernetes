@@ -1,0 +1,84 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: java-api-build
+spec:
+
+  workspaces:
+  - name: workspace
+
+  params:
+  - name: git-url
+    type: string
+    description: Git https url
+    default: https://github.com/nachomillangarcia/axpe-java-api.git
+  - name: git-branch
+    type: string
+    description: Git branch
+    default: main
+  - name: imageStream
+    type: string
+    description: imageStream
+    default: java-api
+
+
+  tasks:
+  - name: fetch-repository
+    taskRef:
+      resolver: cluster
+      params:
+      - name: kind
+        value: task
+      - name: name
+        value: git-clone
+      - name: namespace
+        value: openshift-pipelines
+    workspaces:
+    - name: output
+      workspace: workspace
+    params:
+    - name: URL
+      value: $(params.git-url)
+    - name: SUBDIRECTORY
+      value: ""
+    - name: DELETE_EXISTING
+      value: "true"
+    - name: REVISION
+      value: $(params.git-branch)
+
+  - name: inspect-workspace
+    taskRef:
+      name: inspect-workspace
+    workspaces:
+    - name: source
+      workspace: workspace    
+    runAfter:
+    - fetch-repository
+
+  - name: maven-unit-test
+    taskRef:
+      name: maven-unit-test
+    workspaces:
+    - name: source
+      workspace: workspace    
+    runAfter:
+    - fetch-repository 
+
+  - name: build-image
+    taskRef:
+      resolver: cluster
+      params:
+      - name: kind
+        value: task
+      - name: name
+        value: buildah
+      - name: namespace
+        value: openshift-pipelines
+    params:
+    - name: IMAGE
+      value: image-registry.openshift-image-registry.svc:5000/$(context.pipelineRun.namespace)/$(params.imageStream)
+    workspaces:
+    - name: source
+      workspace: workspace
+    runAfter:
+    - maven-unit-test
