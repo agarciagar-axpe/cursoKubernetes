@@ -22,7 +22,7 @@ spec:
     
   syncPolicy:
     automated:
-      enabled: true
+      enabled: false
       selfHeal: true
     syncOptions:
       - ServerSideApply=true           # forces SSA
