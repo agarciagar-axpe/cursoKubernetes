@@ -29,8 +29,6 @@ spec:
           image: busybox:1.28
           command: ['sh', '-c', "until nslookup java-api.$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace).svc.cluster.local; do echo waiting for myservice; sleep 2; done"]
       {{- end }}
-      imagePullSecrets:
-      - name: openshift-public-registry
       containers:
         - name: java-api
           {{- with .Values.image }}
