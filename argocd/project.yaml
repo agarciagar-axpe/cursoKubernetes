@@ -1,0 +1,29 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: axpe
+  namespace: argocd
+  # Finalizer that ensures that project is not deleted until it is not referenced by any application
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: Axpe CD Project
+  sourceRepos:
+  - https://github.com/nachomillangarcia/axpe-java-api.git
+  - https://github.com/nachomillangarcia/formadoresit-axpe.git
+  - ghcr.io/nachomillangarcia/axpe-java-api
+  destinations:
+  - namespace: default
+    server: https://kubernetes.default.svc
+
+  clusterResourceWhitelist:
+  - group: ''
+    kind: Namespace
+
+  namespaceResourceBlacklist:
+  - group: ''
+    kind: ResourceQuota
+  - group: ''
+    kind: LimitRange
+  - group: ''
+    kind: NetworkPolicy
