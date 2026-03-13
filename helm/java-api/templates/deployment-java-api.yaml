@@ -23,6 +23,10 @@ spec:
         app: {{ .Release.Name }}
     spec:
       serviceAccountName: {{ .Release.Name }}
+
+      imagePullSecrets:
+      - name: openshift-public-registry
+      
       {{- if .Values.initContainer }}
       initContainers:
         - name: init-myservice
