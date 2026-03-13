@@ -1,0 +1,29 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: github-java-api
+  namespace: argocd
+spec:
+  project: axpe
+  destination:
+    namespace: default
+    server: https://kubernetes.default.svc
+  sources:
+  - repoURL: https://github.com/nachomillangarcia/formadoresit-axpe.git
+    path: helm/java-api
+    targetRevision: HEAD
+    helm:
+      valueFiles:
+      - $values-repo/helm/java-api-production.yaml
+
+  - repoURL: https://github.com/nachomillangarcia/formadoresit-axpe.git
+    targetRevision: HEAD
+    ref: values-repo
+    
+  syncPolicy:
+    automated:
+      enabled: true
+      selfHeal: true
+    syncOptions:
+      - ServerSideApply=true           # forces SSA
+      - ApplyOutOfSyncOnly=true        # optional: faster syncs
